@@ -1,5 +1,11 @@
 # Multichain Wallet CLI
 
+
+
+Wallet Architecture Diagram](https://via.placeholder.com/800x400.png?text=Wallet+Architecture+Diagram)
+
+
+
 A command-line interface wallet manager supporting multiple blockchains (Ethereum, Bitcoin, and Solana). Built with Python and Go for secure key derivation and management.
 
 ## Features
