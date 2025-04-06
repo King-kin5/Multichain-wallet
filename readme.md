@@ -1,5 +1,11 @@
 # Multichain Wallet CLI
 
+
+
+
+
+
+
 A command-line interface wallet manager supporting multiple blockchains (Ethereum, Bitcoin, and Solana). Built with Python and Go for secure key derivation and management.
 
 ## Features
