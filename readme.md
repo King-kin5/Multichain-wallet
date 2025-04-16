@@ -13,7 +13,7 @@ A command-line interface wallet manager supporting multiple blockchains (Ethereu
 - 🔐 BIP39 mnemonic generation and wallet derivation
 - 💼 Multi-chain support:
   - Ethereum (fully implemented)
-  - Bitcoin (key derivation ready)
+  - Bitcoin (fully implemented)
   - Solana (key derivation ready)
 - 🔒 Secure key encryption/decryption
 - 💸 Transaction management (Ethereum)
