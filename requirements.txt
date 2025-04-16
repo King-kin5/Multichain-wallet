@@ -1,0 +1,11 @@
+# Core dependencies
+web3
+bitcoinlib
+
+# Blockchain interactions
+eth-account
+eth-utils
+
+# Utility packages
+python-dotenv
+typing-extensions

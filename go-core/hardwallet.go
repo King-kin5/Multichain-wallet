@@ -27,28 +27,98 @@ const (
 )
 
 // DeriveKey derives a private key and its corresponding address for different blockchain types
-func DeriveKey(mnemonic, path string, chainType ChainType) (string, string, error) {
-	// Validate mnemonic
-	if !bip39.IsMnemonicValid(mnemonic) {
-		return "", "", fmt.Errorf("invalid mnemonic phrase")
-	}
+func DeriveKey(mnemonic, path string, chainType ChainType, witnessType ...string) (string, string, error) {
+    // Validate mnemonic
+    if !bip39.IsMnemonicValid(mnemonic) {
+        return "", "", fmt.Errorf("invalid mnemonic phrase")
+    }
 
-	// Generate seed from mnemonic (consider adding a passphrase for additional security)
-	seed := bip39.NewSeed(mnemonic, "")
+    // Generate seed from mnemonic (consider adding a passphrase for additional security)
+    seed := bip39.NewSeed(mnemonic, "")
 
-	// Switch case to determine which blockchain key derivation function to call
-	switch chainType {
-	case Bitcoin:
-		return deriveBitcoinKey(seed, path) // Call Bitcoin key derivation function
-	case Ethereum:
-		return deriveEthereumKey(seed, path) // Call Ethereum key derivation function
-	case Solana:
-		return deriveSolanaKey(seed, path) // Call Solana key derivation function
-	default:
-		return "", "", fmt.Errorf("unsupported chain type") // Return an error for unsupported chain type
-	}
+    // Switch case to determine which blockchain key derivation function to call
+    switch chainType {
+    case Bitcoin:
+        // If witnessType is provided, pass it to deriveBitcoinKey
+        if len(witnessType) > 0 {
+            return deriveBitcoinKeyWithFormat(seed, path, witnessType[0])
+        }
+        return deriveBitcoinKey(seed, path) // Original function for backward compatibility
+    case Ethereum:
+        return deriveEthereumKey(seed, path)
+    case Solana:
+        return deriveSolanaKey(seed, path)
+    default:
+        return "", "", fmt.Errorf("unsupported chain type")
+    }
 }
+// deriveBitcoinKeyWithFormat derives a Bitcoin private key and address with specified format
+func deriveBitcoinKeyWithFormat(seed []byte, path string, witnessType string) (string, string, error) {
+    // Generate master key from seed
+    masterKey, err := hdkeychain.NewMaster(seed, &chaincfg.MainNetParams)
+    if err != nil {
+        return "", "", fmt.Errorf("failed to create master key: %w", err)
+    }
 
+    // Derive key from the given derivation path
+    derivedKey, err := DeriveKeyFromPath(masterKey, path)
+    if err != nil {
+        return "", "", fmt.Errorf("failed to derive key: %w", err)
+    }
+
+    // Extract private key
+    privateKey, err := derivedKey.ECPrivKey()
+    if err != nil {
+        return "", "", fmt.Errorf("failed to extract private key: %w", err)
+    }
+    privKeyHex := hex.EncodeToString(privateKey.Serialize())
+
+    // Extract public key
+    pubKey, err := derivedKey.ECPubKey()
+    if err != nil {
+        return "", "", fmt.Errorf("failed to extract public key: %w", err)
+    }
+
+    // Generate Bitcoin address based on witnessType
+    var address string
+    switch strings.ToLower(witnessType) {
+    case "legacy":
+        // Legacy address (P2PKH)
+        pubKeyHash := btcutil.Hash160(pubKey.SerializeCompressed())
+        legacyAddress, err := btcutil.NewAddressPubKeyHash(pubKeyHash, &chaincfg.MainNetParams)
+        if err != nil {
+            return "", "", fmt.Errorf("failed to create legacy Bitcoin address: %w", err)
+        }
+        address = legacyAddress.EncodeAddress()
+    case "segwit":
+        // SegWit address (P2SH-wrapped)
+        witnessProgram := btcutil.Hash160(pubKey.SerializeCompressed())
+        witnessProgramHash := btcutil.Hash160(append([]byte{0x00, 0x14}, witnessProgram...))
+        segwitAddress, err := btcutil.NewAddressScriptHashFromHash(witnessProgramHash, &chaincfg.MainNetParams)
+        if err != nil {
+            return "", "", fmt.Errorf("failed to create segwit Bitcoin address: %w", err)
+        }
+        address = segwitAddress.EncodeAddress()
+    case "bech32":
+        // Native SegWit address (Bech32/P2WPKH)
+        witnessProg := btcutil.Hash160(pubKey.SerializeCompressed())
+        bech32Address, err := btcutil.NewAddressWitnessPubKeyHash(witnessProg, &chaincfg.MainNetParams)
+        if err != nil {
+            return "", "", fmt.Errorf("failed to create bech32 Bitcoin address: %w", err)
+        }
+        address = bech32Address.EncodeAddress()
+    default:
+        // Default to legacy if unknown format specified
+        pubKeyHash := btcutil.Hash160(pubKey.SerializeCompressed())
+        legacyAddress, err := btcutil.NewAddressPubKeyHash(pubKeyHash, &chaincfg.MainNetParams)
+        if err != nil {
+            return "", "", fmt.Errorf("failed to create Bitcoin address: %w", err)
+        }
+        address = legacyAddress.EncodeAddress()
+    }
+
+    return privKeyHex, address, nil
+}
 // deriveBitcoinKey derives a Bitcoin private key and address from the seed and derivation path
 func deriveBitcoinKey(seed []byte, path string) (string, string, error) {
 	// Generate master key from seed

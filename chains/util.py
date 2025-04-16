@@ -41,13 +41,39 @@ def generate_mnemonic()->str:
     return call_go_core(["generate-mnemonic"])
  
 
-def encrypt_key(privkey_hex:str,password:str)->str:
-    """Encrypt a private key using Go core"""
-    return call_go_core(["encrypt"],privkey_hex,password)
+def encrypt_key(privkey_hex:str, password:str=None)->str:
+    """
+    Encrypt a private key using Go core
+    
+    Args:
+        privkey_hex (str): The private key to encrypt in hex format
+        password (str, optional): Password to use for encryption. If None, one will be generated.
+        
+    Returns:
+        str or tuple: If password is provided, returns encrypted key. If not, returns (encrypted_key, generated_password)
+    """
+    if password:
+        # Use provided password
+        return call_go_core(["encrypt", privkey_hex, password])
+    else:
+        # Generate a password
+        import secrets
+        generated_password = secrets.token_hex(16)
+        encrypted_key = call_go_core(["encrypt", privkey_hex, generated_password])
+        return encrypted_key, generated_password
 
-def decrypt_key(privkey_hex:str,password:str)->str:
-    """Decrypt a private key using Go core"""
-    return call_go_core(["decrypt"],privkey_hex,password)
+def decrypt_key(encrypted_key:str, password:str)->str:
+    """
+    Decrypt a private key using Go core
+    
+    Args:
+        encrypted_key (str): The encrypted private key in hex format
+        password (str): Password to use for decryption
+        
+    Returns:
+        str: Decrypted private key
+    """
+    return call_go_core(["decrypt", encrypted_key, password])
 
 
 def derive_key(mnemonic: str) -> tuple[str, str]:
@@ -74,4 +100,45 @@ def derive_key(mnemonic: str) -> tuple[str, str]:
         address_line.split(": ")[1].strip(),  # Address
         privkey_line.split(": ")[1].strip()   # Private Key
     )
+def derive_sol(mnemonic:str)->tuple[str,str]:
+    """
+    Derive address and private key for Solana.
     
+    Args:
+        mnemonic: BIP-39 mnemonic phrase
+    """
+    output = call_go_core(["derive-sol", mnemonic])
+    lines = output.split("\n")
+    
+    # Parse output lines for address and private key
+    if len(lines) < 2:
+        raise ValueError(f"Unexpected output format: {output}")
+    
+    address_line, privkey_line = lines[0], lines[1]
+    
+    return (
+        address_line.split(": ")[1].strip(),  # Address
+        privkey_line.split(": ")[1].strip()   # Private Key
+    )
+
+def derive_btc(mnemonic: str, witness_type="legacy") -> tuple[str, str]:
+    """
+    Derive address and private key for Bitcoin.
+    
+    Args:
+        mnemonic: BIP-39 mnemonic phrase
+        witness_type: Address format (legacy, segwit, bech32)
+    """
+    output = call_go_core(["derive-btc", mnemonic, witness_type])
+    lines = output.split("\n")
+    
+    # Parse output lines for address and private key
+    if len(lines) < 2:
+        raise ValueError(f"Unexpected output format: {output}")
+    
+    address_line, privkey_line = lines[0], lines[1]
+    
+    return (
+        address_line.split(": ")[1].strip(),  # Address
+        privkey_line.split(": ")[1].strip()   # Private Key
+    )

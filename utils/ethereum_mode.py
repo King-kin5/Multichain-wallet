@@ -90,12 +90,44 @@ class EthereumMode:
                 
                 elif command == "wallet":
                     if self.current_wallet:
-                        print(f"\n👛 Current Wallet:")
-                        print(f"Address: {self.current_wallet.get('address', 'N/A')}")
-                        has_privkey = "Yes" if "private_key" in self.current_wallet else "No (Encrypted)"
-                        print(f"Has Private Key: {has_privkey}\n")
+                        print("\n" + "="*60)
+                        print(" " * 20 + "👛 WALLET INFO 👛")
+                        print("="*60)
+                        
+                        # Wallet Status
+                        status = "🔓 DECRYPTED" if "private_key" in self.current_wallet else "🔒 ENCRYPTED"
+                        print(f"\nStatus: {status}")
+                        
+                        # Address
+                        address = self.current_wallet.get('address', 'N/A')
+                        print(f"\nAddress (ETH):")
+                        print(f"└─ {address}")
+                        
+                        # Key Information
+                        if "private_key" in self.current_wallet:
+                            print("\nPrivate Key:")
+                            print(f"└─ {self.current_wallet['private_key']}")
+                        elif "encrypted_key" in self.current_wallet:
+                            print("\nEncrypted Key:")
+                            print(f"└─ {self.current_wallet['encrypted_key']}")
+                        
+                        # Network Information
+                        network = "Ethereum Mainnet" if self.eth_client and self.eth_client.w3 else "Not Connected"
+                        print(f"\nNetwork: {network}")
+                        
+                        # Additional Info
+                        print("\nAdditional Information:")
+                        print("└─ Ethereum addresses start with '0x'")
+                        print("└─ Uses ECDSA for key generation")
+                        print("└─ Compatible with ERC-20 tokens")
+                        
+                        print("\n" + "="*60 + "\n")
                     else:
-                        print("\n⚠️ No wallet loaded. Use 'create' or 'decrypt' command\n")
+                        print("\n" + "="*60)
+                        print(" " * 20 + "⚠️ NO WALLET LOADED ⚠️")
+                        print("="*60)
+                        print("\nTo create a new wallet, use the 'create' command")
+                        print("To load an existing wallet, use the 'decrypt' command\n")
                 
                 elif command == "create":
                     mnemonic = args[0] if args else generate_mnemonic()
@@ -143,19 +175,17 @@ class EthereumMode:
                         private_key = self.current_wallet["private_key"]
                         encrypted_data = self.eth_client.encrypt_wallet(private_key, password)
                         
-                        # Update current wallet
-                        encrypted_wallet = {
+                        # Update current wallet - keep address, only encrypt private key
+                        self.current_wallet = {
                             "address": self.current_wallet["address"],
                             "encrypted_key": encrypted_data["encrypted_key"]
                         }
                         
-                        self.current_wallet = encrypted_wallet
-                        
-                        print(f"\n🔒 Wallet encrypted successfully!")
+                        print(f"\n🔒 Private key encrypted successfully!")
                         print(f"Password: {encrypted_data['password_reference']}")
                         print("IMPORTANT: Save this password securely!\n")
                     except Exception as e:
-                        print(f"\n⚠️ Error encrypting wallet: {str(e)}")
+                        print(f"\n⚠️ Error encrypting private key: {str(e)}")
                 
                 elif command == "decrypt":
                     encrypted_key = None
@@ -168,7 +198,7 @@ class EthereumMode:
                         encrypted_key = self.current_wallet.get("encrypted_key")
                     
                     if not encrypted_key:
-                        print("\n⚠️ No encrypted wallet loaded. Please provide encrypted key\n")
+                        print("\n⚠️ No encrypted private key loaded. Please provide encrypted key\n")
                         continue
                     
                     password = getpass.getpass("\nEnter decryption password: ")
@@ -176,25 +206,17 @@ class EthereumMode:
                     try:
                         private_key = self.eth_client.decrypt_wallet(encrypted_key, password)
                         
-                        # This line might need adjustment based on how derive_key works
-                        # If derive_key expects a mnemonic, we'd need a different approach
-                        # For now, assuming derive_key can work with a private key directly
-                        try:
-                            address, _ = derive_key(private_key)
-                        except:
-                            # Alternative: derive address from private key using web3
-                            account = self.eth_client.w3.eth.account.from_key(private_key)
-                            address = account.address
-                        
+                        # Update current wallet - keep address, only decrypt private key
                         self.current_wallet = {
-                            "address": address,
+                            "address": self.current_wallet["address"],
                             "private_key": private_key
                         }
                         
-                        print(f"\n🔓 Wallet decrypted successfully!")
-                        print(f"Address: {address}\n")
+                        print(f"\n🔓 Private key decrypted successfully!")
+                        print(f"Address: {self.current_wallet['address']}")
+                        print(f"Private Key: {private_key}\n")
                     except Exception as e:
-                        print(f"\n⚠️ Error decrypting wallet: {str(e)}")
+                        print(f"\n⚠️ Error decrypting private key: {str(e)}")
                 
                 elif command == "send":
                     if len(args) < 2:

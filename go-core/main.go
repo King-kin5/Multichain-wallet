@@ -38,11 +38,15 @@ func main() {
 			os.Exit(0)
 		} else if command == "derive-btc" {
 			if len(os.Args) < 3 {
-				fmt.Println("Usage: derive-btc <mnemonic>")
+				fmt.Println("Usage: derive-btc <mnemonic> [witness_type]")
 				os.Exit(1)
 			}
 			mnemonic := os.Args[2]
-			privKey, address, err := DeriveKey(mnemonic, "m/44'/0'/0'/0/0", Bitcoin)
+			witnessType := "legacy"
+			if len(os.Args) > 3{
+				witnessType=os.Args[3]
+			}
+			privKey, address, err := DeriveKey(mnemonic, "m/44'/0'/0'/0/0", Bitcoin,witnessType)
 			if err != nil {
 				fmt.Println("Error deriving key:", err)
 				os.Exit(1)
