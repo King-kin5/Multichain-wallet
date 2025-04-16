@@ -65,17 +65,17 @@ python cli.py
 - `connect <url>` - Connect to different Ethereum node
 
 ### Bitcoin Mode Commands
-`wallet`- Show current wallet info
-`balance <addr>` - Check BTC balance (uses current wallet if no address provided)
-`create <mnemonic>` - Create a new wallet (generates mnemonic if none provided)
-`encrypt`       - Encrypt the current wallet
-`decrypt`       - Decrypt an encrypted wallet
-`send <to> <amount> <fee>` - Send BTC to an address (fee in satoshis is optional)
-`network <name>` - Switch to a different network (bitcoin, testnet)
-`format <type>` - Switch address format (legacy, segwit, bech32)
-`tx <hash>`    - Check transaction status
-`back`          - Return to main menu
-`help`          - Show this help message
+- `wallet`- Show current wallet info
+- `balance <addr>` - Check BTC balance (uses current wallet if no address provided)
+- `create <mnemonic>` - Create a new wallet (generates mnemonic if none provided)
+- `encrypt`       - Encrypt the current wallet
+- `decrypt`       - Decrypt an encrypted wallet
+- `send <to> <amount> <fee>` - Send BTC to an address (fee in satoshis is optional)
+- `network <name>` - Switch to a different network (bitcoin, testnet)
+- `format <type>` - Switch address format (legacy, segwit, bech32)
+- `tx <hash>`    - Check transaction status
+- `back`          - Return to main menu
+- `help`          - Show this help message
 
 ## Project Structure
 
